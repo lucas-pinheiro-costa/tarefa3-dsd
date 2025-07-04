@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.util.List;
 import java.io.Serializable;
 
-@EntityManager
+@Entity
 @Table(name = "usuarios") // Nome da tabela no banco de dados
 public class Usuario implements Serializable {
 
