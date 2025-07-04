@@ -2,105 +2,49 @@
 
 Este é um sistema de demonstração desenvolvido para a disciplina de Desenvolvimento de Sistemas Distribuídos (DSD), lecionado pelo professor Gracon Huttennberg E. L. de Lima, que utiliza **gRPC** para estabelecer uma comunicação de alta performance entre um servidor central (monitor) e múltiplos clientes (sensores).
 
-O projeto é um exemplo prático de uma arquitetura de microsserviços **poliglota**, com o servidor desenvolvido em **Java** e o cliente (simulador de sensor) em **Python**.
+O objetivo é demonstrar como uma interface de usuário interativa, construída com **React**, pode se comunicar com um backend de alta performance escrito em **Java e gRPC** através de um **API Gateway** que atua como uma ponte, desenvolvido em **Python** com **Django**.
 
-## Arquitetura do teste em Rede Local
+## Arquitetura empregada
 
-Para os testes em sala de aula, operaremos no seguinte modelo:
+A arquitetura do projeto foi desenhada em um modelo de três camadas para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função.
 
--   **Um Servidor central:** executará o microsserviço do `servico-java-monitor`, um painel de monitoramento que receberá os dados de todos os sensores e mostrará em tela alguns logs recebidos durante o cadastro de sensores e dados feitos pelos clientes.
--   **Múltiplos Clientes:** colegas e professor executarão o microsserviço `servico-python-simulador` em suas próprias máquinas. Cada cliente atuará como uma hospedagem de sensores IoT, enviando um fluxo de dados para o servidor central através da rede local.
+1. **Frontend (React):** Uma aplicação de página única (SPA) interativa que roda no navegador. É responsável por toda a interface gráfica e experiência do usuário.
+
+1. **API Gateway (Python/Django):** Um microsserviço que atua como um "tradutor". Ele expõe uma API RESTful (HTTP/JSON) para o frontend e converte essas chamadas em requisições gRPC para o servidor principal.
+
+1. **Backend (Java/gRPC):** O cérebro do sistema, responsável pela lógica de negócio (gerenciamento de usuários, sensores) e pela persistência dos dados em um banco H2.
 
 ```
-                    +--------------------------------+
-                    |            Servidor            |
-                    |    IP: xxx.xxx.xxx.xxx:50051   |
-                    | (Executando o Servidor Java)   |
-                    +---------------^----------------+
-                                    |
-                  (Comunicação via gRPC na rede local)
-                                    |
-      +-----------------------------+-----------------------------+
-      |                             |                             |
-+-----v------+             +--------v-------+             +------v-----+
-|  Cliente 1 |             |    Cliente 2   |             |  Cliente N |
-| (Python)   |             |    (Python)    |             |  (Python)  |
-+------------+             +----------------+             +------------+
++----------------+      (Requisições       +----------------+      (Chamadas      +-----------------+
+|                |      HTTP 1.1/JSON)     |                |        gRPC)        |                 |
+|  Cliente Web   | <---------------------> |   API Gateway  | <-----------------> | Servidor gRPC   |
+|    (React)     |                         |    (Django)    |                     |     (Java)      |
+| (no Navegador) |                         |                |                     | (com Banco H2)  |
+|                | ----------------------> |                | ------------------> |                 |
++----------------+                         +----------------+                     +-----------------+
 ```
 
 <br>
 
-## Instruções para os Clientes
+## Como Executar o Projeto (Ambiente Completo)
 
-Para participar do teste, você atuará como um usuário que cadastra um ou mais "sensores" com múltiplos dados. Siga os passos abaixo para configurar e executar o cliente Python em sua máquina.
+Para executar e testar a aplicação, é necessário rodar os três componentes (Servidor Java, API Gateway Django e Cliente React) simultaneamente.
+
+> [!IMPORTANT]
+> Você precisará de 3 terminais abertos para executar cada serviço de forma independente.
 
 ### Pré-requisitos
 
 Antes de começar, garanta que você tenha os seguintes programas instalados:
 
 1.  **Git:** Para clonar o repositório.
-2.  **Python:** Versão 3.8 ou superior.
-3.  **Pip:** O gerenciador de pacotes do Python (geralmente já vem com o Python).
+2.  **Java (JDK 11+) e Maven**
+3.  **Python (3.8+) e Pip**
+6.  **Node.js (16+) e NPM**
 
-### Passo a Passo
-
-1.  **Clone o Repositório:** Abra um terminal ou prompt de comando e execute o comando abaixo para baixar o projeto.
+* **Clone o Repositório:** Abra um terminal ou prompt de comando e execute o comando abaixo para baixar o projeto.
     ```bash
     git clone https://github.com/lucas-pinheiro-costa/tarefa3-dsd.git
-    cd Atividade3/projeto-gRPC-IoT/servico-python-simulador/
-    ```
-
-2.  **Crie e ative um Ambiente Virtual:**
-    ```bash
-    # Cria o ambiente virtual
-    python -m venv .venv
-    
-    # No Windows:
-    .venv\Scripts\activate
-    # No Linux ou macOS:
-    source .venv/bin/activate
-    ```
-    > [!NOTE]
-    > Após ativar, você deverá ver um `(.venv)` no início da linha de seu terminal.
-
-3.  **Instale as dependências Python:** Instale as bibliotecas necessárias, incluindo o gRPC.
-    ```bash
-    # Instale os pacotes
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure o IP do Servidor:** Esta é a etapa mais importante! Você precisa dizer ao seu cliente para onde enviar os dados.
-    -   Abra o arquivo `sensor_client.py` com um editor.
-    -   Encontre a linha que contém `SERVER_ADDRESS = 'localhost:50051'`.
-    -   Substitua `localhost` pelo **endereço IP do Servidor a ser fornecido**, mantendo a porta `50051`.
-
-    ```python
-    # Linha original
-    # SERVER_ADDRESS = 'localhost:50051'
-
-    # Exemplo de como deve ficar (substitua pelo IP fornecido)
-    SERVER_ADDRESS = 'XXX.XXX.X.XXX:50051'
-    ```
-
-5.  **Execute o Cliente:** com tudo configurado, execute o script!
-    ```bash
-    python sensor_client.py
-    ```
-
-6.  **Verifique a saída:** seu terminal começará a exibir mensagens para que você possa registrar um usuário utilizando `e-mail` e `nome de usuário`, registrar um ou mais sensores e dá-lhe(s) uma descrição e, por fim, registrar dados nesse(s) sensor(es) cadastrado(s), os quais seus logs de monitoramento aparecerão no Monitor (terminal do Servidor).
-
-    ```
-    Resposta do servidor: mensagem: "Usuário registrado com sucesso!" usuario_id: 1 sucesso: true
-
-    Resposta do servidor: mensagem: "Sensor registrado com sucesso!" sensor_id: "a1b2c3d4-e5f6-4a3b-8c7d-1e2f3a4b5c6d" sucesso: true
-
-    Iniciando simulação do sensor 'a1b2c3d4-e5f6-4a3b-8c7d-1e2f3a4b5c6d'. Pressione Ctrl+C para parar.
-    -> Enviando: Temp=28.12°C, Umid=45.91%
-
-    Resposta do servidor: mensagem: "Dado recebido e salvo com sucesso." sucesso: true
-    -> Enviando: Temp=33.45°C, Umid=51.22%
-    
-    Resposta do servidor: mensagem: "Dado recebido e salvo com sucesso." sucesso: true
     ```
 
 <br>
@@ -108,10 +52,6 @@ Antes de começar, garanta que você tenha os seguintes programas instalados:
 ## Instruções para execução do Servidor
 
 Para iniciar o servidor na sua máquina e permitir que os clientes se conectem, siga estes passos.
-
-### Pré-requisitos
--   JDK (Java Development Kit) 11 ou superior.
--   Maven.
 
 ### Passo a Passo
 
@@ -124,13 +64,85 @@ Para iniciar o servidor na sua máquina e permitir que os clientes se conectem, 
     cd Atividade3/projeto-gRPC-IoT/servico-java-monitor
     ```
 
-4.  **Execute o Servidor Java:**
+3.  **Execute o Servidor Java:**
     ```bash
     mvn clean install
     mvn exec:java -Dexec.mainClass="br.com.grpc.iot.MonitorServer"
     ```
 
-5.  **Monitore as conexões:** Seu terminal mostrará que o servidor está no ar. Conforme os clientes se conectarem e enviarem dados, as leituras dos sensores aparecerão em tempo real no seu console.
+4.  **Deixe este terminal rodando:** Ele deve exibir "Servidor gRPC iniciado na porta 50051".
+
+<br>
+
+## Instruções para execução da API Gateway
+
+### Passo a Passo
+
+1.  **Crie e ative um Ambiente Virtual:**
+    ```bash
+    # Navegue para a pasta do gateway
+    cd Atividade3/projeto-gRPC-IoT/django_gateway
+    
+    # Crie e ative o ambiente virtual
+    python -m venv .venv
+    
+    # No Windows:
+    .venv\Scripts\activate
+    # No Linux ou macOS:
+    source .venv/bin/activate
+    ```
+    > [!NOTE]
+    > Após ativar, você deverá ver um `(.venv)` no início da linha de seu terminal.
+
+2.  **Instale as dependências Python:** Instale as bibliotecas necessárias, incluindo o gRPC.
+    ```bash
+    # Instale os pacotes
+    pip install -r requirements.txt
+    ```
+
+3.  **Inicie o servidor Django:**
+    ```bash
+    python manage.py runserver
+    ```
+
+4.  **Deixe este terminal rodando:** Ele deve exibir "Starting development server at http://127.0.0.1:8000/".
+
+<br>
+
+## Instruções para execução do Cliente Web (React)
+
+### Passo a Passo
+
+1. **Navegue para a pasta do cliente React:**
+```bash
+cd Atividade3/projeto-gRPC-IoT/react-client
+```
+
+2. **Instale as dependências do Node.js:**
+```bash
+npm install
+```
+
+3. **Inicie o servidor de desenvolvimento:**
+```bash
+npm run dev
+```
+
+4. **Deixe este terminal rodando:** Ele fornecerá uma URL local para acessar a aplicação, geralmente http://localhost:5173.
+
+5. **Acesse a Aplicação Web:**
+```bash
+# Abra seu navegador e vá para a URL fornecida pelo React (a do Terminal 3, ex: http://localhost:5173).
+# Interaja com a Interface: Você verá a página web do projeto. Utilize os formulários e botões para:
+#   - Cadastrar um novo usuário.
+#   - Buscar os sensores de um usuário existente.
+#   - Realizar as demais operações disponíveis na interface.
+
+# Observe os Logs: A melhor forma de verificar se tudo está funcionando é observar os terminais. Ao interagir com o site, você verá logs aparecendo:
+#   - No Terminal 3 (React/Vite), você verá logs do frontend.
+#   - No Terminal 2 (Django), você verá as requisições HTTP chegando do navegador (GET /api/..., POST /api/...).Buscar os sensores de um usuário existente.
+#   - No Terminal 1 (Java), você verá as chamadas gRPC que o Django fez em nome do navegador, e os logs de interação com o banco de dados.
+```
 
 <br>
 
