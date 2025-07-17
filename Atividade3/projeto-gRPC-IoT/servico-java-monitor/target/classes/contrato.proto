@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+option java_package = "br.com.grpc.iot";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+service MonitorService {
+
+  rpc RegistrarUsuario(RegistrarUsuarioRequest) returns (RegistrarUsuarioResponse);
+
+  rpc RegistrarSensor(RegistrarSensorRequest) returns (RegistrarSensorResponse);
+
+  rpc EnviarDadosSensor(SensorData) returns (StatusResposta);
+
+  rpc GetUser(UserData) returns (UserResponse);
+
+  rpc ListarSensores(ListarSensoresRequest) returns (SensoresResponse);
+
+  rpc GetDados(DadosRequest) returns (DadosResponse);
+
+  rpc GenerateData(GenerateDataRequest) returns (GenerateDataResponse);
+}
+
+message GenerateDataRequest {
+  string sensor_id = 1; 
+}
+
+message GenerateDataResponse {
+  string mensagem = 1;
+  bool sucesso = 2;
+  float temperatura_gerada = 3; 
+  float umidade_gerada = 4;     
+  google.protobuf.Timestamp timestamp_gerado = 5;
+}
+
+message DadosRequest{
+  string sensor_id = 1;
+}
+
+message DadosResponse {
+  string mensagem = 1;    
+  bool sucesso = 2;         
+  string sensor_id_encontrado = 3; 
+  float temperatura_encontrada = 4;
+  float umidade_encontrada = 5;    
+  google.protobuf.Timestamp timestamp_encontrado = 6; 
+}
+
+message ListarSensoresRequest {
+  int64 usuario_id = 1;
+}
+
+message SensorInfo {
+  string sensor_id = 1;
+  string nome = 2;
+  string descricao = 3;
+}
+
+message SensoresResponse {
+  string mensagem = 1;             
+  bool sucesso = 2;                
+  repeated SensorInfo sensores = 3; // lista de objetos SensorInfo
+}
+
+message UserData {
+  string email = 1;
+}
+
+message UserResponse {
+  bool sucesso = 1;
+  int64 usuario_id = 2;
+}
+
+message RegistrarUsuarioRequest {
+  string email = 1; 
+  string nome = 2;  
+}
+
+message RegistrarUsuarioResponse {
+  string mensagem = 1;       
+  int64 usuario_id = 2;      
+  bool sucesso = 3;      
+}
+
+message RegistrarSensorRequest {
+  int64 usuario_id = 1;      
+  string nome = 2;          
+  string descricao = 3;  
+}
+
+message RegistrarSensorResponse {
+  string mensagem = 1;     
+  string sensor_id = 2;    
+  bool sucesso = 3;   
+}
+
+message SensorData {
+  string sensor_id = 1;           
+  float temperatura = 2;           
+  float umidade = 3;         
+  string mensagem = 4;      
+  bool sucesso = 5;
+  google.protobuf.Timestamp timestamp = 6; 
+}
+
+message StatusResposta {
+  string mensagem = 1;
+  int32 total_leituras_recebidas = 2;
+  bool sucesso = 3; 
+}
