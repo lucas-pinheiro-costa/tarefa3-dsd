@@ -6,6 +6,7 @@ br/com/grpc/iot/UserData.class
 br/com/grpc/iot/SensorInfo.class
 br/com/grpc/iot/UserData$1.class
 br/com/grpc/iot/RegistrarUsuarioRequest$1.class
+br/com/grpc/iot/soap/AuditoriaService.class
 br/com/grpc/iot/MonitorServiceGrpc$MethodHandlers.class
 br/com/grpc/iot/DadosRequest$Builder.class
 br/com/grpc/iot/SensoresResponseOrBuilder.class
@@ -14,6 +15,7 @@ br/com/grpc/iot/MonitorServiceGrpc$MonitorServiceImplBase.class
 br/com/grpc/iot/RegistrarSensorRequest$Builder.class
 br/com/grpc/iot/MonitorServiceGrpc$1.class
 br/com/grpc/iot/RegistrarUsuarioResponse$1.class
+br/com/grpc/iot/soap/AuditoriaServiceImpl.class
 br/com/grpc/iot/GenerateDataRequestOrBuilder.class
 br/com/grpc/iot/StatusResposta.class
 br/com/grpc/iot/ListarSensoresRequestOrBuilder.class
