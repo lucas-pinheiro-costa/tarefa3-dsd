@@ -6,32 +6,82 @@ O objetivo é demonstrar como uma interface de usuário interativa, construída 
 
 ## Arquitetura empregada
 
-A arquitetura do projeto foi desenhada em um modelo de três camadas para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função.
+A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função, demonstrando três protocolos de comunicação diferentes.
 
 1. **Frontend (React):** Uma aplicação de página única (SPA) interativa que roda no navegador. É responsável por toda a interface gráfica e experiência do usuário.
 
-1. **API Gateway (Python/Django):** Um microsserviço que atua como um "tradutor". Ele expõe uma API RESTful (HTTP/JSON) para o frontend e converte essas chamadas em requisições gRPC para o servidor principal.
+2. **API Gateway (Python/Django):** Um microsserviço que atua como um "tradutor". Ele expõe uma API RESTful (HTTP/JSON) para o frontend e converte essas chamadas em requisições gRPC para o servidor principal.
 
-1. **Backend (Java/gRPC):** O cérebro do sistema, responsável pela lógica de negócio (gerenciamento de usuários, sensores) e pela persistência dos dados em um banco H2.
+3. **Backend (Java/gRPC):** O cérebro do sistema, responsável pela lógica de negócio (gerenciamento de usuários, sensores) e pela persistência dos dados em um banco H2.
+
+4. **Sistema de auditoria (sistemas legados):** Um sistema externo que recebe notificações de conformidade e auditoria através de SOAP/XML para demonstrar integração com sistemas corporativos ou legados.
+
+### Responsabilidades dos Protocolos
+
+**REST (HTTP/JSON) - A API pública e moderna:**
+- **Papel:** REST é a forma principal e padronizada pela qual o mundo externo interage com o sistema.
+- **Onde:** Na comunicação entre o Cliente Web (React) e o API Gateway (Django).
+- **Por quê:** REST é o padrão de fato para APIs web consumidas por frontends. É flexível, sem estado (stateless) e usa padrões HTTP e JSON bem compreendidos por todos os navegadores e frameworks.
+
+**gRPC - O núcleo de performance (a comunicação interna):**
+- **Papel:** gRPC é a espinha dorsal da comunicação interna de alta velocidade.
+- **Onde:** Na comunicação entre o API Gateway (Django) e o Servidor de Lógica (Java).
+- **Por quê:** Para a comunicação serviço-a-serviço, onde o desempenho e a segurança de tipos são cruciais, o gRPC é a melhor ferramenta.
+
+**SOAP (XML) - A integração corporativa ou legada:**
+- **Papel:** SOAP é usado para demonstrar um cenário de integração com um sistema externo que exige um contrato mais rígido e formal.
+- **Onde:** Na comunicação entre o Servidor de Lógica (Java) e o Sistema de Auditoria externo.
+- **Por quê:** SOAP, com seu contrato estrito definido por um WSDL e seu formato XML, é perfeito para simular cenários B2B ou de integração com sistemas mais antigos. Toda vez que um novo sensor é registrado, o sistema notifica o Sistema de Auditoria por razões de conformidade.
 
 ```
-+----------------+      (Requisições       +----------------+      (Chamadas      +-----------------+
-|                |      HTTP 1.1/JSON)     |                |        gRPC)        |                 |
-|  Cliente Web   | <---------------------> |   API Gateway  | <-----------------> | Servidor gRPC   |
-|    (React)     |                         |    (Django)    |                     |     (Java)      |
-| (no Navegador) |                         |                |                     | (com Banco H2)  |
-|                | ----------------------> |                | ------------------> |                 |
-+----------------+                         +----------------+                     +-----------------+
++------------------+    (Requisições      +-------------------+    (Chamadas       +---------------------+    (SOAP/XML)     +------------------------+
+|                  |    HTTP 1.1/JSON)    |                   |      gRPC)         |                     |                   |                        |
+|   Cliente Web    | <------------------> |   API Gateway     | <----------------> |   Servidor gRPC     | <---------------> |  Sistema de Auditoria  |
+|     (React)      |                      |     (Django)      |                    |      (Java)         |                   |    (Ex: Legado)        |
+|  (no Navegador)  |                      |                   |                    |   (com Banco H2)    |                   |                        |
+|                  |                      |  - REST API       |                    |  - Lógica Negócio   |                   |  - Logs de Auditoria   |
+|  - Interface UI  |                      |  - Conversão      |                    |  - Gestão Sensores  |                   |  - Conformidade        |
+|  - Formulários   | -------------------> |    HTTP -> gRPC   | -----------------> |  - Persistência     | ----------------> |  - Relatórios          |
+|  - Dashboards    |                      |  - Validação      |                    |  - Validação Dados  |                   |  - Integração Legado   |
+|                  |                      |                   |                    |                     |                   |                        |
++------------------+                      +-------------------+                    +---------------------+                   +------------------------+
+
+### Fluxo de comunicação e protocolos
+
+**Exemplo de fluxo completo:**
+
+1. **REST (Cliente → API Gateway):** O usuário no React clica em "Cadastrar novo sensor"
+   - Uma requisição `POST /api/sensors` é enviada via HTTP/JSON para o Django
+
+2. **gRPC (API Gateway → Servidor Java):** O Django processa a requisição REST
+   - Converte os dados JSON em uma mensagem gRPC `CreateSensorRequest`
+   - Envia via gRPC para o servidor Java na porta 50051
+
+3. **Java (processamento):** O servidor Java processa a lógica de negócio
+   - Valida os dados do sensor
+   - Persiste no banco H2
+   - Prepara resposta para o Django
+
+4. **SOAP (Servidor Java → Sistema de auditoria):** Por compliance, o Java notifica o sistema de auditoria
+   - Cria uma mensagem SOAP/XML com os dados do sensor registrado
+   - Envia para o sistema de auditoria externo (simulado via logs)
+
+5. **Retorno:** As respostas seguem o caminho inverso até chegar ao usuário React
+
+**Demonstração dos três "protocolos":**
+- **REST:** Visível no navegador Web e nos logs do Django
+- **gRPC:** Visível nos logs do Django (cliente) e Java (servidor)
+- **SOAP:** Visível nos logs do Java quando sensores são registrados
 ```
 
 <br>
 
 ## Como Executar o Projeto (Ambiente Completo)
 
-Para executar e testar a aplicação, é necessário rodar os três componentes (Servidor Java, API Gateway Django e Cliente React) simultaneamente.
+Para executar e testar a aplicação, é necessário rodar os três componentes principais (Servidor Java, API Gateway Django e Cliente React) simultaneamente. O Sistema de auditoria é simulado através de logs demonstrativos que mostram como seria a integração SOAP/XML.
 
 > [!IMPORTANT]
-> Você precisará de 3 terminais abertos para executar cada serviço de forma independente.
+> Você precisará de 3 terminais abertos para executar cada serviço de forma independente. O sistema de auditoria SOAP é demonstrado através de logs no servidor Java.
 
 ### Pré-requisitos
 

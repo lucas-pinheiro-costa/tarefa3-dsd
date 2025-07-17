@@ -16,4 +16,3 @@ urlpatterns = [
     path('sensors/<str:sensor_id>/latest-data/', GetLatestSensorDataView.as_view(), name='get-latest-sensor-data'),
     path('sensors/<str:sensor_id>/generate-data/', GenerateSensorDataView.as_view(), name='generate-sensor-data'),
 ]
-
