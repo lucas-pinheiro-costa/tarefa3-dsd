@@ -47,7 +47,7 @@
     // Comando a ser executado após a criação do contêiner.
 	// 1. Atualiza a lista de pacotes do sistema.
 	// 2. Instala o NetBeans e as bibliotecas do X11 de forma não interativa.
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y netbeans x11-apps",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wget x11-apps && wget https://dlcdn.apache.org/netbeans/netbeans-installers/25/apache-netbeans-25_25-1_all.deb && sudo apt install -y ./apache-netbeans-25_25-1_all.deb",
     
     // Define o usuário remoto para ser não-root
     "remoteUser": "vscode"
