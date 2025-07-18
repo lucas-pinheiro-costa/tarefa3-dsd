@@ -38,14 +38,6 @@
 
     // Mapeia a porta do nosso servidor gRPC para a máquina local. Essencial para testes!
     "forwardPorts": [50051],
-
-	// Argumentos para o comando 'docker run'. Essencial para habilitar apps com GUI.
-    "runArgs": [
-        // Monta o socket do X11 para encaminhamento de display
-        "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
-        // Define a variável de ambiente DISPLAY para o host
-        "-e", "DISPLAY=${env:DISPLAY}"
-    ],
     
     // Comando a ser executado após a criação do contêiner.
 	// 1. Cria o ambiente virtual.
