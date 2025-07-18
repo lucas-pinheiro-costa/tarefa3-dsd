@@ -5,7 +5,8 @@ from .views import (
     ListUserSensorsView,
     GetLatestSensorDataView,
     GetUserByEmailView,
-    GenerateSensorDataView
+    GenerateSensorDataView,
+    RegistrarSensorView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('sensors/register/', SensorRegistrationView.as_view(), name='register-sensor'),
     path('sensors/<str:sensor_id>/latest-data/', GetLatestSensorDataView.as_view(), name='get-latest-sensor-data'),
     path('sensors/<str:sensor_id>/generate-data/', GenerateSensorDataView.as_view(), name='generate-sensor-data'),
+    path('sensors/', RegistrarSensorView.as_view(), name='register-sensor'),
 ]

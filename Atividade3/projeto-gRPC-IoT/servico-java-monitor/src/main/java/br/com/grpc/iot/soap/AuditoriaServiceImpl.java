@@ -1,14 +1,29 @@
 package br.com.grpc.iot.soap;
 
 import jakarta.jws.WebService;
+import java.util.UUID;
 
-@WebService(endpointInterface = "br.com.grpc.iot.soap.AuditoriaService") // aponta para a interface que estamos implementando. Isso garante que a implementação e o contrato estejam sempre ligados.
+@WebService(endpointInterface = "br.com.grpc.iot.soap.AuditoriaService")
 public class AuditoriaServiceImpl implements AuditoriaService {
 
     @Override
-    public String dizerOla(String nome) {
-        // Adicionado um log no console para sabermos quando o método for chamado.
-        System.out.println("[SOAP Service] Método 'dizerOla' foi chamado com o nome: " + nome);
-        return "Ola, " + nome + "! Bem-vindo ao servico SOAP. (17 de julho de 2025, 15:09)";
+    public AuditoriaResponse notificarRegistroSensor(String sensorId, String nomeSensor, long usuarioId, String timestampRegistro) {
+        // Para esta demonstração, a "lógica" do serviço de auditoria será apenas imprimir os dados recebidos no console e retornar uma confirmação.
+        System.out.println("--- [SOAP Service] Notificação de Auditoria Recebida ---");
+        System.out.println("ID do Sensor: " + sensorId);
+        System.out.println("Nome do Sensor: " + nomeSensor);
+        System.out.println("ID do Usuário Dono: " + usuarioId);
+        System.out.println("Data/Hora do Registro: " + timestampRegistro);
+        System.out.println("---------------------------------------------------------");
+
+        // Gera um ID de auditoria único para a resposta.
+        String idAuditoria = UUID.randomUUID().toString();
+
+        // Cria e retorna o objeto de resposta.
+        AuditoriaResponse response = new AuditoriaResponse();
+        response.setStatusNotificacao("RECEBIDO_COM_SUCESSO");
+        response.setIdAuditoria(idAuditoria);
+
+        return response;
     }
 }

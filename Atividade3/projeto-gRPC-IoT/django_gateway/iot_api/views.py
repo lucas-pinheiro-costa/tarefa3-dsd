@@ -9,6 +9,7 @@ from datetime import datetime
 
 from .grpc_client import contrato_pb2
 from .grpc_client import contrato_pb2_grpc
+from .soap_client import notificar_auditoria_soap
 
 GRPC_SERVER_ADDRESS = 'localhost:50051'
 
@@ -204,3 +205,53 @@ class GetUserByEmailView(APIView):
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:
             channel.close()
+
+
+### -- Endpoint para chamada de função de auditoria --
+class RegistrarSensorView(APIView):
+    """
+    Endpoint para registrar um novo sensor.
+    Recebe POST: /api/sensors/
+    """
+    def post(self, request):
+        # 1. Extrai os dados da requisição HTTP (enviada pelo React)
+        usuario_id = request.data.get('usuarioId')
+        nome_sensor = request.data.get('nome')
+        descricao_sensor = request.data.get('descricao')
+
+        if not usuario_id or not nome_sensor:
+            return Response({"error": "usuarioId e nome são obrigatórios."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Chama o serviço gRPC para registrar o sensor no sistema principal
+        stub, channel = get_grpc_stub()
+        try:
+            grpc_request = contrato_pb2.RegistrarSensorRequest(
+                usuario_id=usuario_id,
+                nome=nome_sensor,
+                descricao=descricao_sensor
+            )
+            grpc_response = stub.RegistrarSensor(grpc_request)
+            channel.close()
+
+            if not grpc_response.sucesso:
+                return Response({"error": grpc_response.mensagem}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 3. Se o registro gRPC foi bem-sucedido, chama o serviço SOAP de auditoria
+            sensor_id_registrado = grpc_response.sensor_id
+            notificar_auditoria_soap(
+                sensor_id=sensor_id_registrado,
+                nome_sensor=nome_sensor,
+                usuario_id=usuario_id
+            )
+
+            # 4. Retorna a resposta final para o cliente React
+            response_data = {
+                "mensagem": grpc_response.mensagem,
+                "sensorId": sensor_id_registrado,
+                "sucesso": True
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except grpc.RpcError as e:
+            channel.close()
+            return Response({"error": f"Erro gRPC: {e.details()}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

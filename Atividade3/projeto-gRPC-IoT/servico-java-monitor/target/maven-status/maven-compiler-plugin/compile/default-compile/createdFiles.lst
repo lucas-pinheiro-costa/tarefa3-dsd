@@ -29,6 +29,7 @@ br/com/grpc/iot/MonitorServiceGrpc.class
 br/com/grpc/iot/RegistrarSensorResponseOrBuilder.class
 br/com/grpc/iot/model/Sensor.class
 br/com/grpc/iot/Contrato.class
+br/com/grpc/iot/soap/AuditoriaResponse.class
 br/com/grpc/iot/DadosResponse$1.class
 br/com/grpc/iot/GenerateDataResponse$Builder.class
 br/com/grpc/iot/StatusResposta$Builder.class
