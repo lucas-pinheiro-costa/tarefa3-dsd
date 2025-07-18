@@ -37,15 +37,28 @@
     },
 
     // Mapeia a porta do nosso servidor gRPC para a máquina local. Essencial para testes!
-    "forwardPorts": [50051] //,
+    "forwardPorts": [50051],
 
-	// Comando a ser executado após a criação do contêiner.
+	// Argumentos para o comando 'docker run'. Essencial para habilitar apps com GUI.
+    "runArgs": [
+        // Monta o socket do X11 para encaminhamento de display
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
+        // Define a variável de ambiente DISPLAY para o host
+        "-e", "DISPLAY=${env:DISPLAY}"
+    ],
+    
+    // Comando a ser executado após a criação do contêiner.
 	// 1. Cria o ambiente virtual.
 	// 2. Ativa o ambiente virtual (compatível com Linux/macOS e Windows).
 	// 3. Instala as dependências Python do projeto a partir de um 'requirements.txt'.
 
-    // "postCreateCommand": "python3 -m venv .venv && (source .venv/bin/activate || source .venv/Scripts/activate) && pip install -r 'Atividade3/projeto-gRPC-IoT/requirements.txt'",
+    // Comando a ser executado após a criação do contêiner.
+	// 1. Atualiza a lista de pacotes do sistema.
+	// 2. Instala o NetBeans e as bibliotecas do X11 de forma não interativa.
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y netbeans x11-apps",
     
     // Define o usuário remoto para ser não-root
-    // "remoteUser": "vscode"
+    "remoteUser": "vscode"
+
+    // "postCreateCommand": "python3 -m venv .venv && (source .venv/bin/activate || source .venv/Scripts/activate) && pip install -r 'Atividade3/projeto-gRPC-IoT/requirements.txt'"
 }
