@@ -4,3 +4,7 @@ google-api-python-client
 django 
 djangorestframework 
 django-cors-headers
+channels 
+asgiref
+daphne
+drf-yasg

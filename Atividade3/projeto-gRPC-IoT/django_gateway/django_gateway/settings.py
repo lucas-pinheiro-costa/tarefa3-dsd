@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'iot_api',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'channels',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
@@ -54,6 +56,14 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+ASGI_APPLICATION = 'django_gateway.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 ROOT_URLCONF = "django_gateway.urls"
 
@@ -104,6 +114,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'https://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://127.0.0.1:8000',
+    'http://localhost:5173',
+    'https://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://127.0.0.1:5173',
+    'https://*.githubpreview.dev',
+    'https://*.preview.app.github.dev',
+    'https://*.app.github.dev',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -119,8 +142,8 @@ USE_TZ = True
 CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
-    "https://bug-free-bassoon-5g49gw9qv5v73p457-5173.app.github.dev", 
-    "https://bug-free-bassoon-5g49gw9qv5v73p457-8000.app.github.dev", 
+    "https://shiny-journey-69rp9jpgvrwvf5vpx-5173.app.github.dev", 
+    "https://shiny-journey-69rp9jpgvrwvf5vpx-8000.app.github.dev", 
     "http://localhost:5173" 
 ]
 CORS_ALLOW_CREDENTIALS = True

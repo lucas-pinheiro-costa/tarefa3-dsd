@@ -418,6 +418,53 @@ public class MonitorServiceImpl extends MonitorServiceGrpc.MonitorServiceImplBas
             responseObserver.onCompleted();
         }
     }
+
+    @Override
+    public void listAllSensors(EmptyRequest request, StreamObserver<AllSensorsResponse> responseObserver) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        AllSensorsResponse.Builder responseBuilder = AllSensorsResponse.newBuilder();
+
+        try {
+            // Consulta todos os sensores
+            List<Sensor> todosOsSensores = em.createQuery("SELECT s FROM Sensor s", Sensor.class)
+                                             .getResultList();
+
+            // Adiciona as informações de cada sensor à resposta
+            for (Sensor sensor : todosOsSensores) {
+                SensorInfo sensorInfo = SensorInfo.newBuilder()
+                                                  .setSensorId(sensor.getSensorId())
+                                                  .setNome(sensor.getNome())
+                                                  .setDescricao(sensor.getDescricao() != null ? sensor.getDescricao() : "")
+                                                  .build();
+                responseBuilder.addSensores(sensorInfo);
+            }
+
+            em.getTransaction().commit();
+            responseBuilder.setSucesso(true)
+                           .setMensagem("Todos os sensores listados com sucesso. Total: " + todosOsSensores.size());
+            System.out.println("✅ Todos os sensores listados. Total: " + todosOsSensores.size());
+
+        } catch (PersistenceException | IllegalStateException e) {
+            System.err.println("Erro de persistência ao listar todos os sensores: " + e.getMessage());
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            responseBuilder.setSucesso(false)
+                           .setMensagem("Erro ao listar todos os sensores: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado ao listar todos os sensores: " + e.getMessage());
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            responseBuilder.setSucesso(false)
+                           .setMensagem("Erro interno ao listar todos os sensores.");
+        } finally {
+            em.close();
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+        }
+    }
 }
 
 

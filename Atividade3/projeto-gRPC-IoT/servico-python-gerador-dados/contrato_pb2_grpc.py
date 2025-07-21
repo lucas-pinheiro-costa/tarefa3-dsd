@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from . import contrato_pb2 as contrato__pb2
+import contrato_pb2 as contrato__pb2
 
 GRPC_GENERATED_VERSION = '1.73.1'
 GRPC_VERSION = grpc.__version__
@@ -131,6 +131,7 @@ class MonitorServiceServicer(object):
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
+
 
     def ListAllSensors(self, request, context):
         """Missing associated documentation comment in .proto file."""

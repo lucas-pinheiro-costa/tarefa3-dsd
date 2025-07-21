@@ -20,6 +20,31 @@ service MonitorService {
   rpc GetDados(DadosRequest) returns (DadosResponse);
 
   rpc GenerateData(GenerateDataRequest) returns (GenerateDataResponse);
+
+  rpc StreamRealtimeSensorData(StreamRequest) returns (stream RealtimeSensorData);
+
+  rpc ListAllSensors(EmptyRequest) returns (AllSensorsResponse);
+
+}
+
+message EmptyRequest {}
+
+message AllSensorsResponse {
+  string mensagem = 1;
+  bool sucesso = 2;
+  repeated SensorInfo sensores = 3; // Reutiliza a mensagem SensorInfo
+}
+
+message StreamRequest {
+  // string sensor_id_filter = 1; // Opcional: para filtrar dados por sensor
+  // int64 usuario_id_filter = 2; // Opcional: para filtrar dados por usuário
+}
+
+message RealtimeSensorData {
+  string sensor_id = 1;
+  float temperatura = 2;
+  float umidade = 3;
+  google.protobuf.Timestamp timestamp = 4;
 }
 
 message GenerateDataRequest {

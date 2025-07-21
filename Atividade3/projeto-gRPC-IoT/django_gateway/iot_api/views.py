@@ -2,10 +2,7 @@ import grpc
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-import json
-from google.protobuf.json_format import MessageToJson, Parse
-from google.protobuf.timestamp_pb2 import Timestamp
-from datetime import datetime
+from rest_framework.reverse import reverse
 
 from .grpc_client import contrato_pb2
 from .grpc_client import contrato_pb2_grpc
@@ -16,33 +13,6 @@ def get_grpc_stub():
     channel = grpc.insecure_channel(GRPC_SERVER_ADDRESS)
     stub = contrato_pb2_grpc.MonitorServiceStub(channel)
     return stub, channel
-
-class GenerateSensorDataView(APIView):
-    """
-    Endpoint para gerar dados aleatórios de sensores.
-    Recebe POST: /api/sensors/<str:sensor_id>/generate-data/
-    """
-    def post(self, request, sensor_id):
-        try:
-            stub, channel = get_grpc_stub()
-            grpc_request = contrato_pb2.GenerateDataRequest(sensor_id=sensor_id)
-            grpc_response = stub.GenerateData(grpc_request)
-
-            response_data = {
-                "mensagem": grpc_response.mensagem,
-                "sucesso": grpc_response.sucesso,
-                "sensor_id": sensor_id,
-                "temperatura": grpc_response.temperatura_gerada,
-                "umidade": grpc_response.umidade_gerada,
-                "timestamp": grpc_response.timestamp_gerado.ToDatetime().isoformat() + "Z" # Formato ISO 8601 UTC
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except grpc.RpcError as e:
-            error_message = f"Erro gRPC ao gerar dados do sensor: {e.details}"
-            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            channel.close()
 
 class UserRegistrationView(APIView):
     """
@@ -61,13 +31,33 @@ class UserRegistrationView(APIView):
             grpc_request = contrato_pb2.RegistrarUsuarioRequest(email=email, nome=nome)
             grpc_response = stub.RegistrarUsuario(grpc_request)
             
-            # Converte a resposta gRPC para JSON para o cliente React
-            # MessageToJson é útil para converter para JSON
             response_data = {
                 "mensagem": grpc_response.mensagem,
                 "sucesso": grpc_response.sucesso,
-                "usuario_id": grpc_response.usuario_id # Note: IDs int64 são strings em JSON
+                "usuario_id": grpc_response.usuario_id,
+                "_links": {} 
             }
+
+            if grpc_response.sucesso and grpc_response.usuario_id:
+                response_data["_links"]["list_sensors"] = {
+                    "href": request.build_absolute_uri(reverse('list-user-sensors', args=[grpc_response.usuario_id])),
+                    "method": "GET",
+                    "title": "Listar Sensores deste Usuário"
+                }
+                response_data["_links"]["register_sensor_for_user"] = {
+                    "href": request.build_absolute_uri(reverse('register-sensor')),
+                    "method": "POST",
+                    "title": "Registrar Novo Sensor para este Usuário",
+                    "templated": True, 
+                    "template_params": ["usuario_id", "nome", "descricao"]
+                }
+                response_data["_links"]["self"] = {
+                    "href": request.build_absolute_uri(reverse('get-user-by-email') + f"?email={email}"),
+                    "method": "GET",
+                    "title": "Consultar este Usuário por Email"
+                }
+
+
             return Response(response_data, status=status.HTTP_200_OK)
 
         except grpc.RpcError as e:
@@ -83,7 +73,7 @@ class SensorRegistrationView(APIView):
     """
     def post(self, request):
         try:
-            usuario_id = int(request.data.get('usuario_id')) 
+            usuario_id = int(request.data.get('usuario_id'))
             nome = request.data.get('nome')
             descricao = request.data.get('descricao', '')
         except (ValueError, TypeError):
@@ -104,8 +94,22 @@ class SensorRegistrationView(APIView):
             response_data = {
                 "mensagem": grpc_response.mensagem,
                 "sucesso": grpc_response.sucesso,
-                "sensor_id": grpc_response.sensor_id
+                "sensor_id": grpc_response.sensor_id,
+                "_links": {}
             }
+
+            if grpc_response.sucesso and grpc_response.sensor_id:
+                response_data["_links"]["get_latest_data"] = {
+                    "href": request.build_absolute_uri(reverse('get-latest-sensor-data', args=[grpc_response.sensor_id])),
+                    "method": "GET",
+                    "title": "Obter Última Leitura deste Sensor"
+                }
+                response_data["_links"]["owner_sensors"] = {
+                    "href": request.build_absolute_uri(reverse('list-user-sensors', args=[usuario_id])),
+                    "method": "GET",
+                    "title": "Listar Sensores do Usuário Proprietário"
+                }
+
             return Response(response_data, status=status.HTTP_200_OK)
 
         except grpc.RpcError as e:
@@ -124,20 +128,38 @@ class ListUserSensorsView(APIView):
         try:
             grpc_request = contrato_pb2.ListarSensoresRequest(usuario_id=user_id)
             grpc_response = stub.ListarSensores(grpc_request)
-
+            
             sensors_list = []
             for sensor_info in grpc_response.sensores:
-                sensors_list.append({
+                sensor_item = {
                     "sensor_id": sensor_info.sensor_id,
                     "nome": sensor_info.nome,
-                    "descricao": sensor_info.descricao
-                })
+                    "descricao": sensor_info.descricao,
+                    "_links": { 
+                        "self": {
+                            "href": request.build_absolute_uri(reverse('get-latest-sensor-data', args=[sensor_info.sensor_id])),
+                            "method": "GET",
+                            "title": "Obter Última Leitura deste Sensor"
+                        },
+                    }
+                }
+                sensors_list.append(sensor_item)
 
             response_data = {
                 "mensagem": grpc_response.mensagem,
                 "sucesso": grpc_response.sucesso,
-                "sensores": sensors_list
+                "sensores": sensors_list,
+                "_links": {
+                    "register_sensor": {
+                        "href": request.build_absolute_uri(reverse('register-sensor')),
+                        "method": "POST",
+                        "title": "Registrar Novo Sensor",
+                        "templated": True,
+                        "template_params": ["usuario_id", "nome", "descricao"]
+                    }
+                }
             }
+
             return Response(response_data, status=status.HTTP_200_OK)
 
         except grpc.RpcError as e:
@@ -163,12 +185,21 @@ class GetLatestSensorDataView(APIView):
                 "sensor_id_encontrado": grpc_response.sensor_id_encontrado,
                 "temperatura_encontrada": grpc_response.temperatura_encontrada,
                 "umidade_encontrada": grpc_response.umidade_encontrada,
-                "timestamp_encontrado": None
+                "timestamp_encontrado": None,
+                "_links": {}
             }
-            if grpc_response.HasField('timestamp_encontrado'): # Verifica se o campo foi setado
+            if grpc_response.HasField('timestamp_encontrado'):
                  dt_object = grpc_response.timestamp_encontrado.ToDatetime()
-                 response_data["timestamp_encontrado"] = dt_object.isoformat() + "Z" # Formato ISO 8601 UTC
+                 response_data["timestamp_encontrado"] = dt_object.isoformat() + "Z"
 
+            if grpc_response.sucesso:
+                response_data["_links"]["register_sensor_for_user"] = {
+                    "href": request.build_absolute_uri(reverse('register-sensor')),
+                    "method": "POST",
+                    "title": "Registrar Novo Sensor para este Usuário",
+                    "templated": True,
+                    "template_params": ["usuario_id", "nome", "descricao"]
+                }
             return Response(response_data, status=status.HTTP_200_OK)
 
         except grpc.RpcError as e:
@@ -196,7 +227,23 @@ class GetUserByEmailView(APIView):
             response_data = {
                 "sucesso": grpc_response.sucesso,
                 "usuario_id_encontrado": grpc_response.usuario_id,
+                "_links": {}
             }
+
+            if grpc_response.sucesso and grpc_response.usuario_id:
+                response_data["_links"]["list_sensors"] = {
+                    "href": request.build_absolute_uri(reverse('list-user-sensors', args=[grpc_response.usuario_id])),
+                    "method": "GET",
+                    "title": "Listar Sensores deste Usuário"
+                }
+                response_data["_links"]["register_sensor_for_user"] = {
+                    "href": request.build_absolute_uri(reverse('register-sensor')),
+                    "method": "POST",
+                    "title": "Registrar Novo Sensor para este Usuário",
+                    "templated": True,
+                    "template_params": ["usuario_id", "nome", "descricao"]
+                }
+            
             return Response(response_data, status=status.HTTP_200_OK)
 
         except grpc.RpcError as e:

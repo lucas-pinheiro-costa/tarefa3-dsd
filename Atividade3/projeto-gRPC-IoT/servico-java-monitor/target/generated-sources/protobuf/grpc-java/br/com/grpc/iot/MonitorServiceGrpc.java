@@ -232,6 +232,68 @@ public final class MonitorServiceGrpc {
     return getGenerateDataMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<br.com.grpc.iot.StreamRequest,
+      br.com.grpc.iot.RealtimeSensorData> getStreamRealtimeSensorDataMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "StreamRealtimeSensorData",
+      requestType = br.com.grpc.iot.StreamRequest.class,
+      responseType = br.com.grpc.iot.RealtimeSensorData.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+  public static io.grpc.MethodDescriptor<br.com.grpc.iot.StreamRequest,
+      br.com.grpc.iot.RealtimeSensorData> getStreamRealtimeSensorDataMethod() {
+    io.grpc.MethodDescriptor<br.com.grpc.iot.StreamRequest, br.com.grpc.iot.RealtimeSensorData> getStreamRealtimeSensorDataMethod;
+    if ((getStreamRealtimeSensorDataMethod = MonitorServiceGrpc.getStreamRealtimeSensorDataMethod) == null) {
+      synchronized (MonitorServiceGrpc.class) {
+        if ((getStreamRealtimeSensorDataMethod = MonitorServiceGrpc.getStreamRealtimeSensorDataMethod) == null) {
+          MonitorServiceGrpc.getStreamRealtimeSensorDataMethod = getStreamRealtimeSensorDataMethod =
+              io.grpc.MethodDescriptor.<br.com.grpc.iot.StreamRequest, br.com.grpc.iot.RealtimeSensorData>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "StreamRealtimeSensorData"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  br.com.grpc.iot.StreamRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  br.com.grpc.iot.RealtimeSensorData.getDefaultInstance()))
+              .setSchemaDescriptor(new MonitorServiceMethodDescriptorSupplier("StreamRealtimeSensorData"))
+              .build();
+        }
+      }
+    }
+    return getStreamRealtimeSensorDataMethod;
+  }
+
+  private static volatile io.grpc.MethodDescriptor<br.com.grpc.iot.EmptyRequest,
+      br.com.grpc.iot.AllSensorsResponse> getListAllSensorsMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "ListAllSensors",
+      requestType = br.com.grpc.iot.EmptyRequest.class,
+      responseType = br.com.grpc.iot.AllSensorsResponse.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<br.com.grpc.iot.EmptyRequest,
+      br.com.grpc.iot.AllSensorsResponse> getListAllSensorsMethod() {
+    io.grpc.MethodDescriptor<br.com.grpc.iot.EmptyRequest, br.com.grpc.iot.AllSensorsResponse> getListAllSensorsMethod;
+    if ((getListAllSensorsMethod = MonitorServiceGrpc.getListAllSensorsMethod) == null) {
+      synchronized (MonitorServiceGrpc.class) {
+        if ((getListAllSensorsMethod = MonitorServiceGrpc.getListAllSensorsMethod) == null) {
+          MonitorServiceGrpc.getListAllSensorsMethod = getListAllSensorsMethod =
+              io.grpc.MethodDescriptor.<br.com.grpc.iot.EmptyRequest, br.com.grpc.iot.AllSensorsResponse>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ListAllSensors"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  br.com.grpc.iot.EmptyRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  br.com.grpc.iot.AllSensorsResponse.getDefaultInstance()))
+              .setSchemaDescriptor(new MonitorServiceMethodDescriptorSupplier("ListAllSensors"))
+              .build();
+        }
+      }
+    }
+    return getListAllSensorsMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -328,6 +390,20 @@ public final class MonitorServiceGrpc {
         io.grpc.stub.StreamObserver<br.com.grpc.iot.GenerateDataResponse> responseObserver) {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getGenerateDataMethod(), responseObserver);
     }
+
+    /**
+     */
+    default void streamRealtimeSensorData(br.com.grpc.iot.StreamRequest request,
+        io.grpc.stub.StreamObserver<br.com.grpc.iot.RealtimeSensorData> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getStreamRealtimeSensorDataMethod(), responseObserver);
+    }
+
+    /**
+     */
+    default void listAllSensors(br.com.grpc.iot.EmptyRequest request,
+        io.grpc.stub.StreamObserver<br.com.grpc.iot.AllSensorsResponse> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getListAllSensorsMethod(), responseObserver);
+    }
   }
 
   /**
@@ -412,6 +488,22 @@ public final class MonitorServiceGrpc {
       io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getGenerateDataMethod(), getCallOptions()), request, responseObserver);
     }
+
+    /**
+     */
+    public void streamRealtimeSensorData(br.com.grpc.iot.StreamRequest request,
+        io.grpc.stub.StreamObserver<br.com.grpc.iot.RealtimeSensorData> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncServerStreamingCall(
+          getChannel().newCall(getStreamRealtimeSensorDataMethod(), getCallOptions()), request, responseObserver);
+    }
+
+    /**
+     */
+    public void listAllSensors(br.com.grpc.iot.EmptyRequest request,
+        io.grpc.stub.StreamObserver<br.com.grpc.iot.AllSensorsResponse> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getListAllSensorsMethod(), getCallOptions()), request, responseObserver);
+    }
   }
 
   /**
@@ -477,6 +569,21 @@ public final class MonitorServiceGrpc {
     public br.com.grpc.iot.GenerateDataResponse generateData(br.com.grpc.iot.GenerateDataRequest request) {
       return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getGenerateDataMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public java.util.Iterator<br.com.grpc.iot.RealtimeSensorData> streamRealtimeSensorData(
+        br.com.grpc.iot.StreamRequest request) {
+      return io.grpc.stub.ClientCalls.blockingServerStreamingCall(
+          getChannel(), getStreamRealtimeSensorDataMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public br.com.grpc.iot.AllSensorsResponse listAllSensors(br.com.grpc.iot.EmptyRequest request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getListAllSensorsMethod(), getCallOptions(), request);
     }
   }
 
@@ -551,6 +658,14 @@ public final class MonitorServiceGrpc {
       return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getGenerateDataMethod(), getCallOptions()), request);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<br.com.grpc.iot.AllSensorsResponse> listAllSensors(
+        br.com.grpc.iot.EmptyRequest request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getListAllSensorsMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_REGISTRAR_USUARIO = 0;
@@ -560,6 +675,8 @@ public final class MonitorServiceGrpc {
   private static final int METHODID_LISTAR_SENSORES = 4;
   private static final int METHODID_GET_DADOS = 5;
   private static final int METHODID_GENERATE_DATA = 6;
+  private static final int METHODID_STREAM_REALTIME_SENSOR_DATA = 7;
+  private static final int METHODID_LIST_ALL_SENSORS = 8;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -605,6 +722,14 @@ public final class MonitorServiceGrpc {
         case METHODID_GENERATE_DATA:
           serviceImpl.generateData((br.com.grpc.iot.GenerateDataRequest) request,
               (io.grpc.stub.StreamObserver<br.com.grpc.iot.GenerateDataResponse>) responseObserver);
+          break;
+        case METHODID_STREAM_REALTIME_SENSOR_DATA:
+          serviceImpl.streamRealtimeSensorData((br.com.grpc.iot.StreamRequest) request,
+              (io.grpc.stub.StreamObserver<br.com.grpc.iot.RealtimeSensorData>) responseObserver);
+          break;
+        case METHODID_LIST_ALL_SENSORS:
+          serviceImpl.listAllSensors((br.com.grpc.iot.EmptyRequest) request,
+              (io.grpc.stub.StreamObserver<br.com.grpc.iot.AllSensorsResponse>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -673,6 +798,20 @@ public final class MonitorServiceGrpc {
               br.com.grpc.iot.GenerateDataRequest,
               br.com.grpc.iot.GenerateDataResponse>(
                 service, METHODID_GENERATE_DATA)))
+        .addMethod(
+          getStreamRealtimeSensorDataMethod(),
+          io.grpc.stub.ServerCalls.asyncServerStreamingCall(
+            new MethodHandlers<
+              br.com.grpc.iot.StreamRequest,
+              br.com.grpc.iot.RealtimeSensorData>(
+                service, METHODID_STREAM_REALTIME_SENSOR_DATA)))
+        .addMethod(
+          getListAllSensorsMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              br.com.grpc.iot.EmptyRequest,
+              br.com.grpc.iot.AllSensorsResponse>(
+                service, METHODID_LIST_ALL_SENSORS)))
         .build();
   }
 
@@ -728,6 +867,8 @@ public final class MonitorServiceGrpc {
               .addMethod(getListarSensoresMethod())
               .addMethod(getGetDadosMethod())
               .addMethod(getGenerateDataMethod())
+              .addMethod(getStreamRealtimeSensorDataMethod())
+              .addMethod(getListAllSensorsMethod())
               .build();
         }
       }
