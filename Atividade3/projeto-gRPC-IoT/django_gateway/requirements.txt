@@ -8,3 +8,4 @@ channels
 asgiref
 daphne
 drf-yasg
+zeep

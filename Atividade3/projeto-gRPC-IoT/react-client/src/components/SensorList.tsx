@@ -132,43 +132,40 @@ const SensorList: React.FC = () => {
         <p className="text-center text-gray-600">Nenhum sensor registrado.</p>
       )}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sensors.map((sensor) => {
-          const dataToDisplay = sensor.realtimeData || sensor.latestData;
-          const normalizedData = dataToDisplay ? normalizeSensorData(dataToDisplay) : null;
-
-          return (
-            <div
-              key={sensor.sensor_id}
-              className="bg-white p-6 rounded-lg shadow-md"
-            >
-              <h2 className="text-xl font-semibold mb-2">{sensor.nome}</h2>
-              <p className="text-gray-600 mb-4">{sensor.descricao || 'N/A'}</p>
-              {/* Exibe os dados normalizados do sensor */}
-              {normalizedData?.sucesso ? (
-                <div>
-                  <p>
-                    <strong>Temperatura:</strong>{' '}
-                    {normalizedData.temperatura.toFixed(2)} °C
-                  </p>
-                  <p>
-                    <strong>Umidade:</strong>{' '}
-                    {normalizedData.umidade.toFixed(2)}%
-                  </p>
-                  <p>
-                    <strong>Data:</strong>{' '}
-                    {normalizedData.timestamp
-                      ? new Date(normalizedData.timestamp).toLocaleString()
-                      : 'N/A'}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-red-500">
-                  {normalizedData?.mensagem || "Sem dados recentes"}
+        {sensors.map((sensor) => (
+          <div
+            key={sensor.sensor_id}
+            className="bg-white p-6 rounded-lg shadow-md"
+          >
+            <h2 className="text-xl font-semibold mb-2">{sensor.nome}</h2>
+            <p className="text-gray-600 mb-4">{sensor.descricao}</p>
+            {/* Exibe os dados do sensor */}
+            {sensor.latestData?.sucesso ? (
+              <div>
+                <p>
+                  <strong>Temperatura:</strong>{' '}
+                  {sensor.latestData.temperatura_encontrada?.toFixed(2)} °C
                 </p>
-              )}
-            </div>
-          );
-        })}
+                <p>
+                  <strong>Umidade:</strong>{' '}
+                  {sensor.latestData.umidade_encontrada?.toFixed(2)}%
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {sensor.latestData.timestamp_encontrado
+                    ? new Date(sensor.latestData.timestamp_encontrado).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-red-500">Sem dados recentes</p>
+            )}
+            <GenerateSensorDataButton
+              sensorId={sensor.sensor_id}
+              onDataGenerated={handleGenerateDataForSensor} 
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
