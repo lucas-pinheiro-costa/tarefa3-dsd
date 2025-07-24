@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { UserResponse, SensorListResponse, SensorDataResponse, SensorRegistrationRequest,
    SensorRegistrationResponse, UserRegistrationRequest, UserRegistrationResponse } from '../types/api';
 
-const API_BASE_URL = 'https://shiny-journey-69rp9jpgvrwvf5vpx-8000.app.github.dev/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 export const getUserByEmail = async (email: string): Promise<UserResponse> => {
   try {
