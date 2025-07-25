@@ -6,15 +6,17 @@ O objetivo é demonstrar como uma interface de usuário interativa, construída 
 
 ## Arquitetura empregada
 
-A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função, demonstrando três protocolos de comunicação diferentes.
+A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função, demonstrando **quatro protocolos de comunicação** diferentes.
 
 1. **Frontend (React):** Uma aplicação de página única (SPA) interativa que roda no navegador. É responsável por toda a interface gráfica e experiência do usuário.
 
-2. **API Gateway (Python/Django):** Um microsserviço que atua como um "tradutor". Ele expõe uma API RESTful (HTTP/JSON) para o frontend e converte essas chamadas em requisições gRPC para o servidor principal.
+2. **API Gateway (Python/Django):** Um microsserviço que atua como um "tradutor". Ele expõe uma API RESTful (HTTP/JSON) para o frontend e converte essas chamadas em requisições gRPC para o servidor principal. Também gerencia conexões WebSocket para dados em tempo real.
 
 3. **Backend (Java/gRPC):** O cérebro do sistema, responsável pela lógica de negócio (gerenciamento de usuários, sensores) e pela persistência dos dados em um banco H2.
 
-4. **Sistema de auditoria (sistemas legados):** Um sistema externo que recebe notificações de conformidade e auditoria através de SOAP/XML para demonstrar integração com sistemas corporativos ou legados.
+4. **Gerador de Dados (Python/gRPC):** Um microserviço que gera dados simulados de sensores em tempo real e os transmite via gRPC streaming para o Django Gateway.
+
+5. **Sistema de auditoria (SOAP):** Um sistema externo que recebe notificações de conformidade e auditoria através de SOAP/XML para demonstrar integração com sistemas corporativos ou legados.
 
 ### Responsabilidades dos Protocolos
 
@@ -23,10 +25,15 @@ A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garan
 - **Onde:** Na comunicação entre o Cliente Web (React) e o API Gateway (Django).
 - **Por quê:** REST é o padrão de fato para APIs web consumidas por frontends. É flexível, sem estado (stateless) e usa padrões HTTP e JSON bem compreendidos por todos os navegadores e frameworks.
 
+**WebSocket - Comunicação em tempo real:**
+- **Papel:** WebSocket permite comunicação bidirecional em tempo real entre o navegador e o servidor.
+- **Onde:** Na comunicação entre o Cliente Web (React) e o API Gateway (Django) para receber dados de sensores em tempo real.
+- **Por quê:** Para exibir dados de sensores que mudam constantemente, WebSocket é ideal por manter uma conexão persistente e permitir atualizações em tempo real.
+
 **gRPC - O núcleo de performance (a comunicação interna):**
 - **Papel:** gRPC é a espinha dorsal da comunicação interna de alta velocidade.
-- **Onde:** Na comunicação entre o API Gateway (Django) e o Servidor de Lógica (Java).
-- **Por quê:** Para a comunicação serviço-a-serviço, onde o desempenho e a segurança de tipos são cruciais, o gRPC é a melhor ferramenta.
+- **Onde:** Na comunicação entre o API Gateway (Django) e o Servidor de Lógica (Java), e entre o Django e o Gerador de Dados (Python).
+- **Por quê:** Para a comunicação serviço-a-serviço, onde o desempenho e a segurança de tipos são cruciais, o gRPC é a melhor ferramenta. Inclui suporte a streaming para dados em tempo real.
 
 **SOAP (XML) - A integração corporativa ou legada:**
 - **Papel:** SOAP é usado para demonstrar um cenário de integração com um sistema externo que exige um contrato mais rígido e formal.
@@ -35,16 +42,27 @@ A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garan
 
 ```
 +------------------+    (Requisições      +-------------------+    (Chamadas       +---------------------+    (SOAP/XML)     +------------------------+
-|                  |    HTTP 1.1/JSON)    |                   |      gRPC)         |                     |                   |                        |
-|   Cliente Web    | <------------------> |   API Gateway     | <----------------> |   Servidor gRPC     | <---------------> |  Sistema de Auditoria  |
-|     (React)      |                      |     (Django)      |                    |      (Java)         |                   |    (Ex: Legado)        |
-|  (no Navegador)  |                      |                   |                    |   (com Banco H2)    |                   |                        |
-|                  |                      |  - REST API       |                    |  - Lógica Negócio   |                   |  - Logs de Auditoria   |
-|  - Interface UI  |                      |  - Conversão      |                    |  - Gestão Sensores  |                   |  - Conformidade        |
-|  - Formulários   | -------------------> |    HTTP -> gRPC   | -----------------> |  - Persistência     | ----------------> |  - Relatórios          |
-|  - Dashboards    |                      |  - Validação      |                    |  - Validação Dados  |                   |  - Integração Legado   |
-|                  |                      |                   |                    |                     |                   |                        |
-+------------------+                      +-------------------+                    +---------------------+                   +------------------------+
+|                  |    HTTP/JSON +       |                   |      gRPC)         |                     |                   |                        |
+|   Cliente Web    |    WebSocket)        |   API Gateway     | <----------------> |   Servidor gRPC     | <---------------> |  Sistema de Auditoria  |
+|     (React)      | <------------------> |     (Django)      |                    |      (Java)         |                   |        (SOAP)          |
+|  (no Navegador)  |                      |                   |    (Streaming      |   (com Banco H2)    |                   |                        |
+|                  |                      |  - REST API       |      gRPC)         |  - Lógica Negócio   |                   |  - Logs de Auditoria   |
+|  - Interface UI  |                      |  - WebSocket      | <----------------> |  - Gestão Sensores  |                   |  - Conformidade        |
+|  - Formulários   | -------------------> |  - Conversão      |                    |  - Persistência     | ----------------> |  - Relatórios          |
+|  - Dashboards    |                      |    HTTP -> gRPC   |                    |  - Validação Dados  |                   |  - Integração Legado   |
+|  - Tempo Real    |                      |  - Dados Tempo    |    +-------------+ |  - Serviço SOAP     |                   |                        |
+|                  |                      |    Real           |    |             | |                     |                   |                        |
++------------------+                      +-------------------+    |  Gerador de | +---------------------+                   +------------------------+
+                                                 ^                 |   Dados     |                                                      
+                                                 |                 |  (Python/   |                                                      
+                                                 |                 |   gRPC)     |                                                      
+                                                 |                 |             |                                                      
+                                                 +-----------------|  - Stream   |                                                      
+                                                   (gRPC Stream)   |    Dados    |                                                      
+                                                                   |  - Sensores |                                                      
+                                                                   |    Tempo    |                                                      
+                                                                   |    Real     |                                                      
+                                                                   +-------------+                                                      
 
 ### Fluxo de comunicação e protocolos
 
@@ -54,7 +72,7 @@ A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garan
    - Uma requisição `POST /api/sensors` é enviada via HTTP/JSON para o Django
 
 2. **gRPC (API Gateway → Servidor Java):** O Django processa a requisição REST
-   - Converte os dados JSON em uma mensagem gRPC `CreateSensorRequest`
+   - Converte os dados JSON em uma mensagem gRPC `RegistrarSensorRequest`
    - Envia via gRPC para o servidor Java na porta 50051
 
 3. **Java (processamento):** O servidor Java processa a lógica de negócio
@@ -64,24 +82,31 @@ A arquitetura do projeto foi desenhada em um modelo de quatro camadas para garan
 
 4. **SOAP (Servidor Java → Sistema de auditoria):** Por compliance, o Java notifica o sistema de auditoria
    - Cria uma mensagem SOAP/XML com os dados do sensor registrado
-   - Envia para o sistema de auditoria externo (simulado via logs)
+   - Envia para o sistema de auditoria via serviço SOAP na porta 8081
 
-5. **Retorno:** As respostas seguem o caminho inverso até chegar ao usuário React
+5. **WebSocket + gRPC Stream (Dados em tempo real):** Paralelamente, dados em tempo real fluem:
+   - O Gerador de Dados Python consulta periodicamente o servidor Java (gRPC)
+   - Gera dados simulados dos sensores e envia via gRPC streaming para o Django
+   - O Django retransmite esses dados via WebSocket para o React
+   - O usuário vê atualizações em tempo real na interface
 
-**Demonstração dos três "protocolos":**
-- **REST:** Visível no navegador Web e nos logs do Django
-- **gRPC:** Visível nos logs do Django (cliente) e Java (servidor)
-- **SOAP:** Visível nos logs do Java quando sensores são registrados
+6. **Retorno:** As respostas seguem o caminho inverso até chegar ao usuário React
+
+**Demonstração dos quatro protocolos:**
+- **REST:** Visível no navegador Web e nos logs do Django (operações CRUD)
+- **WebSocket:** Visível no console do navegador (dados em tempo real)
+- **gRPC:** Visível nos logs do Django (cliente) e Java (servidor) + Python (streaming)
+- **SOAP:** Visível nos logs do Java quando sensores são registrados (auditoria)
 ```
 
 <br>
 
 ## Como Executar o Projeto (Ambiente Completo)
 
-Para executar e testar a aplicação, é necessário rodar os três componentes principais (Servidor Java, API Gateway Django e Cliente React) simultaneamente. O Sistema de auditoria é simulado através de logs demonstrativos que mostram como seria a integração SOAP/XML.
+Para executar e testar a aplicação, é necessário rodar os **quatro componentes principais** (Servidor Java, API Gateway Django, Cliente React e Gerador de Dados Python) simultaneamente. O Sistema de auditoria SOAP é integrado ao servidor Java.
 
 > [!IMPORTANT]
-> Você precisará de 3 terminais abertos para executar cada serviço de forma independente. O sistema de auditoria SOAP é demonstrado através de logs no servidor Java.
+> Você precisará de 4 terminais abertos para executar cada serviço de forma independente. O sistema de auditoria SOAP é iniciado automaticamente junto com o servidor Java.
 
 ### Pré-requisitos
 
@@ -90,7 +115,7 @@ Antes de começar, garanta que você tenha os seguintes programas instalados:
 1.  **Git:** Para clonar o repositório.
 2.  **Java (JDK 11+) e Maven**
 3.  **Python (3.8+) e Pip**
-6.  **Node.js (16+) e NPM**
+4.  **Node.js (16+) e NPM**
 
 * **Clone o Repositório:** Abra um terminal ou prompt de comando e execute o comando abaixo para baixar o projeto.
     ```bash
@@ -99,32 +124,59 @@ Antes de começar, garanta que você tenha os seguintes programas instalados:
 
 <br>
 
-## Instruções para execução do Servidor
+## Instruções para execução do Servidor Java
 
 Para iniciar o servidor na sua máquina e permitir que os clientes se conectem, siga estes passos.
 
 ### Passo a Passo
 
-1.  **Encontre seu Endereço IP Local:** os clientes precisarão deste endereço.
-    -   No **Windows**, abra o `cmd` e digite `ipconfig`. Procure pelo "Endereço IPv4".
-    -   No **Linux** ou **macOS**, abra o terminal e digite `ifconfig` ou `ip a`. Procure pelo seu endereço de rede local (geralmente começa com `192.168`, `10.0` ou `172.16`).
-
-2.  **Navegue para a pasta do Servidor:** Em um terminal, na raiz do projeto, entre na pasta do serviço Java.
+1.  **Navegue para a pasta do Servidor:** Em um terminal, na raiz do projeto, entre na pasta do serviço Java.
     ```bash
     cd Atividade3/projeto-gRPC-IoT/servico-java-monitor
     ```
 
-3.  **Execute o Servidor Java:**
+2.  **Execute o Servidor Java:**
     ```bash
     mvn clean install
     mvn exec:java -Dexec.mainClass="br.com.grpc.iot.MonitorServer"
     ```
 
-4.  **Deixe este terminal rodando:** Ele deve exibir "Servidor gRPC iniciado na porta 50051".
+3.  **Verifique a inicialização:** O terminal deve exibir:
+    - "✅ Servidor gRPC iniciado na porta 50051"
+    - "✅ Serviço SOAP de Auditoria iniciado em http://localhost:8081/auditoria?wsdl"
+
+4.  **Deixe este terminal rodando:** Este será o Terminal 1.
 
 <br>
 
-## Instruções para execução da API Gateway
+## Instruções para execução do Gerador de Dados Python
+
+### Passo a Passo
+
+1.  **Navegue para a pasta do Gerador de Dados:**
+    ```bash
+    cd Atividade3/projeto-gRPC-IoT/servico-python-gerador-dados
+    ```
+
+2.  **Instale as dependências Python:**
+    ```bash
+    pip install grpcio grpcio-tools protobuf
+    ```
+
+3.  **Execute o Gerador de Dados:**
+    ```bash
+    python gerador_data.py
+    ```
+
+4.  **Verifique a inicialização:** O terminal deve exibir:
+    - "✅ Servidor gRPC do Gerador de Dados Python iniciado na porta: 50052"
+    - "Aguardando conexões de streaming de dados..."
+
+5.  **Deixe este terminal rodando:** Este será o Terminal 2.
+
+<br>
+
+## Instruções para execução da API Gateway Django
 
 ### Passo a Passo
 
@@ -155,7 +207,11 @@ Para iniciar o servidor na sua máquina e permitir que os clientes se conectem, 
     python manage.py runserver
     ```
 
-4.  **Deixe este terminal rodando:** Ele deve exibir "Starting development server at http://127.0.0.1:8000/".
+4.  **Verifique a inicialização:** O terminal deve exibir:
+    - "Starting development server at http://127.0.0.1:8000/"
+    - Conexões WebSocket e gRPC estarão disponíveis
+
+5.  **Deixe este terminal rodando:** Este será o Terminal 3.
 
 <br>
 
@@ -178,21 +234,67 @@ npm install
 npm run dev
 ```
 
-4. **Deixe este terminal rodando:** Ele fornecerá uma URL local para acessar a aplicação, geralmente http://localhost:5173.
+4. **Verifique a inicialização:** O terminal deve exibir:
+   - "VITE ready in XXXXms"
+   - "Local: http://localhost:5173/"
 
-5. **Acesse a Aplicação Web:**
-```bash
-# Abra seu navegador e vá para a URL fornecida pelo React (a do Terminal 3, ex: http://localhost:5173).
-# Interaja com a Interface: Você verá a página web do projeto. Utilize os formulários e botões para:
-#   - Cadastrar um novo usuário.
-#   - Buscar os sensores de um usuário existente.
-#   - Realizar as demais operações disponíveis na interface.
+5. **Deixe este terminal rodando:** Este será o Terminal 4.
 
-# Observe os Logs: A melhor forma de verificar se tudo está funcionando é observar os terminais. Ao interagir com o site, você verá logs aparecendo:
-#   - No Terminal 3 (React/Vite), você verá logs do frontend.
-#   - No Terminal 2 (Django), você verá as requisições HTTP chegando do navegador (GET /api/..., POST /api/...).Buscar os sensores de um usuário existente.
-#   - No Terminal 1 (Java), você verá as chamadas gRPC que o Django fez em nome do navegador, e os logs de interação com o banco de dados.
-```
+## Testando a Aplicação
+
+### Acesso e Funcionalidades
+
+1. **Acesse a Aplicação Web:**
+   - Abra seu navegador e vá para `http://localhost:5173/`
+   - Você verá a interface do sistema de monitoramento IoT
+
+2. **Funcionalidades Disponíveis:**
+   - **Cadastrar/Buscar usuário** por email
+   - **Registrar novos sensores** para usuários
+   - **Visualizar sensores** de um usuário
+   - **Ver dados em tempo real** dos sensores (via WebSocket)
+   - **Gerar dados simulados** para testes
+
+3. **Observar os Logs:** A melhor forma de verificar se tudo está funcionando é observar os terminais:
+   - **Terminal 1 (Java):** Logs de gRPC, banco H2, e notificações SOAP
+   - **Terminal 2 (Python):** Logs de geração de dados em tempo real
+   - **Terminal 3 (Django):** Logs de requisições HTTP/REST e WebSocket
+   - **Terminal 4 (React/Vite):** Logs do frontend
+
+### Verificação dos Protocolos
+
+Durante o uso da aplicação, você poderá observar os quatro protocolos em ação:
+
+- **REST:** Requisições HTTP visíveis no terminal Django e network tab do navegador
+- **WebSocket:** Dados em tempo real visíveis no console do navegador
+- **gRPC:** Comunicação entre serviços visível nos logs do Django e Java
+- **SOAP:** Notificações de auditoria visíveis nos logs do Java
+
+### Endpoints Disponíveis
+
+- **Frontend:** http://localhost:5173/
+- **API Gateway:** http://localhost:8000/api/
+- **Documentação API:** http://localhost:8000/swagger/
+- **WebSocket:** ws://localhost:8000/ws/sensor-data/
+- **SOAP WSDL:** http://localhost:8081/auditoria?wsdl
+
+## Configuração para Ambientes de Desenvolvimento
+
+### Dev Containers e GitHub Codespaces
+
+Se você estiver executando este projeto em dev containers locais ou GitHub Codespaces, consulte o arquivo [`CONFIGURACAO_DEV_CONTAINER.md`](./CONFIGURACAO_DEV_CONTAINER.md) para instruções específicas sobre:
+
+- Configuração de URLs para ambiente local vs. Codespaces
+- Configuração de CORS no Django
+- Configuração do Vite para aceitar conexões externas
+- Resolução de problemas comuns
+
+### Problemas Comuns e Soluções
+
+1. **Página React em branco:** Verifique se todos os serviços estão rodando e se as URLs estão configuradas corretamente
+2. **Erro de CORS:** Certifique-se de que o Django está configurado para aceitar requisições do React
+3. **WebSocket não conecta:** Verifique se o Gerador de Dados Python está rodando
+4. **Erro gRPC:** Verifique se o servidor Java está rodando na porta 50051
 
 <br>
 
