@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { UserResponse, SensorListResponse, SensorDataResponse, SensorRegistrationRequest,
-   SensorRegistrationResponse, UserRegistrationRequest, UserRegistrationResponse } from '../types/api';
+   SensorRegistrationResponse, UserRegistrationRequest, UserRegistrationResponse, GenerateDataResponse } from '../types/api';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -99,14 +99,13 @@ export const registerUser = async (userData: UserRegistrationRequest): Promise<U
   }
 };
 
-export const generateSensorData = async (sensorId: number): Promise<GenerateDataResponse> => { // Ajuste o tipo de retorno conforme sua API
+export const generateSensorData = async (sensorId: number): Promise<GenerateDataResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/sensors/${sensorId}/generate-data/`, { // URL da sua API para gerar dados
-      method: 'POST', // Geralmente é um POST para acionar uma ação
+    const response = await fetch(`${API_BASE_URL}/sensors/${sensorId}/generate-data/`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // body: JSON.stringify({ /* qualquer dado adicional que sua API precise */ }),
     });
 
     if (!response.ok) {
@@ -115,15 +114,22 @@ export const generateSensorData = async (sensorId: number): Promise<GenerateData
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.mensagem || errorData.error || errorMessage;
-      } catch (jsonError) {
+      } catch {
         errorMessage = errorText || errorMessage;
       }
       throw new Error(errorMessage);
     }
-    // Supondo que a API retorne um JSON simples de sucesso/falha
     return await response.json();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro na API ao gerar dados para sensor:', error);
-    return { sucesso: false, mensagem: error.message || 'Erro desconhecido' };
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return { 
+      sucesso: false, 
+      mensagem: errorMessage,
+      sensor_id: sensorId.toString(),
+      temperatura: 0,
+      umidade: 0,
+      timestamp: new Date().toISOString()
+    };
   }
 };

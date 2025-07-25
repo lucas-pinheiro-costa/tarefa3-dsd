@@ -2,10 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserSensors, getLatestSensorData } from '../api/api';
 import type { Sensor, SensorDataResponse, RealtimeSensorData } from '../types/api';
-import { normalizeSensorData } from '../types/api';
 import NewSensorButton from './NewSensorButton';
 
-const websocket_url = 'wss://shiny-journey-69rp9jpgvrwvf5vpx-8000.app.github.dev/ws/sensor-data/';
+const websocket_url = 'ws://localhost:8000/ws/sensor-data/';
 
 interface SensorWithData extends Sensor {
   latestData?: SensorDataResponse; 
@@ -105,13 +104,14 @@ const SensorList: React.FC = () => {
       setError('Nenhum sensor encontrado');
       setSensors([]);
     }
-  } catch (err: any) {
-    setError('Erro ao carregar sensores: ' + err.message);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+    setError('Erro ao carregar sensores: ' + errorMessage);
     console.error('Erro ao buscar sensores:', err);
   } finally {
     setLoading(false);
   }
-}, [userId]);
+}, [userId, sensors]);
 
   useEffect(() => {
     fetchSensorsAndData();
@@ -160,10 +160,6 @@ const SensorList: React.FC = () => {
             ) : (
               <p className="text-red-500">Sem dados recentes</p>
             )}
-            <GenerateSensorDataButton
-              sensorId={sensor.sensor_id}
-              onDataGenerated={handleGenerateDataForSensor} 
-            />
           </div>
         ))}
       </div>
