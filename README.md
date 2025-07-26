@@ -4,6 +4,8 @@ Este é um sistema de demonstração desenvolvido para a disciplina de Desenvolv
 
 O objetivo é demonstrar como uma interface de usuário interativa, construída com **React**, pode se comunicar com um backend de alta performance escrito em **Java e gRPC** através de um **API Gateway** que atua como uma ponte, desenvolvido em **Python** com **Django**.
 
+<br>
+
 ## Arquitetura empregada
 
 A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para garantir desacoplamento, escalabilidade e a especialização de cada tecnologia em sua melhor função, demonstrando **quatro protocolos de comunicação** diferentes.
@@ -17,6 +19,8 @@ A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para ga
 4. **Gerador de Dados (Python/gRPC):** Um microserviço que gera dados simulados de sensores em tempo real e os transmite via gRPC streaming para o Django Gateway.
 
 5. **Sistema de auditoria (SOAP):** Um sistema externo que recebe notificações de conformidade e auditoria através de SOAP/XML para demonstrar integração com sistemas corporativos ou legados.
+
+<br>
 
 ### Responsabilidades dos Protocolos
 
@@ -39,6 +43,8 @@ A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para ga
 - **Papel:** SOAP é usado para demonstrar um cenário de integração com um sistema externo que exige um contrato mais rígido e formal.
 - **Onde:** Na comunicação entre o Servidor de Lógica (Java) e o Sistema de Auditoria externo.
 - **Por quê:** SOAP, com seu contrato estrito definido por um WSDL e seu formato XML, é perfeito para simular cenários B2B ou de integração com sistemas mais antigos. Toda vez que um novo sensor é registrado, o sistema notifica o Sistema de Auditoria por razões de conformidade.
+
+<br>
 
 ```
 +------------------+    (Requisições      +-------------------+    (Chamadas       +---------------------+    (SOAP/XML)     +------------------------+
@@ -63,6 +69,9 @@ A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para ga
                                                                    |    Tempo    |                                                      
                                                                    |    Real     |                                                      
                                                                    +-------------+                                                      
+```
+
+<br>
 
 ### Fluxo de comunicação e protocolos
 
@@ -97,7 +106,6 @@ A arquitetura do projeto foi desenhada em um modelo de **cinco camadas** para ga
 - **WebSocket:** Visível no console do navegador (dados em tempo real)
 - **gRPC:** Visível nos logs do Django (cliente) e Java (servidor) + Python (streaming)
 - **SOAP:** Visível nos logs do Java quando sensores são registrados (auditoria)
-```
 
 <br>
 
@@ -107,6 +115,8 @@ Para executar e testar a aplicação, é necessário rodar os **quatro component
 
 > [!IMPORTANT]
 > Você precisará de 4 terminais abertos para executar cada serviço de forma independente. O sistema de auditoria SOAP é iniciado automaticamente junto com o servidor Java.
+
+<br>
 
 ### Pré-requisitos
 
@@ -240,6 +250,8 @@ npm run dev
 
 5. **Deixe este terminal rodando:** Este será o Terminal 4.
 
+<br>
+
 ## Testando a Aplicação
 
 ### Acesso e Funcionalidades
@@ -277,6 +289,8 @@ Durante o uso da aplicação, você poderá observar os quatro protocolos em aç
 - **Documentação API:** http://localhost:8000/swagger/
 - **WebSocket:** ws://localhost:8000/ws/sensor-data/
 - **SOAP WSDL:** http://localhost:8081/auditoria?wsdl
+
+<br>
 
 ## Configuração para Ambientes de Desenvolvimento
 
