@@ -212,9 +212,13 @@ Para iniciar o servidor na sua máquina e permitir que os clientes se conectem, 
     pip install -r requirements.txt
     ```
 
-3.  **Inicie o servidor Django:**
+3.  **Inicie o servidor Django (modo ASGI para WebSocket):**
     ```bash
-    python manage.py runserver
+    # Para suporte completo a WebSocket, use daphne ao invés de runserver
+    daphne -b 0.0.0.0 -p 8000 django_gateway.asgi:application
+    
+    # Alternativa usando runserver (apenas para desenvolvimento, sem WebSocket):
+    # python manage.py runserver
     ```
 
 4.  **Verifique a inicialização:** O terminal deve exibir:

@@ -139,9 +139,28 @@ const SensorList: React.FC = () => {
           >
             <h2 className="text-xl font-semibold mb-2">{sensor.nome}</h2>
             <p className="text-gray-600 mb-4">{sensor.descricao}</p>
-            {/* Exibe os dados do sensor */}
-            {sensor.latestData?.sucesso ? (
-              <div>
+            {/* Exibe os dados do sensor - prioriza dados em tempo real */}
+            {sensor.realtimeData ? (
+              <div className="border-l-4 border-green-500 pl-4">
+                <p className="text-sm text-green-600 mb-2">📡 Dados em tempo real</p>
+                <p>
+                  <strong>Temperatura:</strong>{' '}
+                  {sensor.realtimeData.temperatura?.toFixed(2)} °C
+                </p>
+                <p>
+                  <strong>Umidade:</strong>{' '}
+                  {sensor.realtimeData.umidade?.toFixed(2)}%
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {sensor.realtimeData.timestamp
+                    ? new Date(sensor.realtimeData.timestamp).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+            ) : sensor.latestData?.sucesso ? (
+              <div className="border-l-4 border-blue-500 pl-4">
+                <p className="text-sm text-blue-600 mb-2">💾 Últimos dados salvos</p>
                 <p>
                   <strong>Temperatura:</strong>{' '}
                   {sensor.latestData.temperatura_encontrada?.toFixed(2)} °C
@@ -158,7 +177,7 @@ const SensorList: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <p className="text-red-500">Sem dados recentes</p>
+              <p className="text-red-500">Sem dados disponíveis</p>
             )}
           </div>
         ))}
