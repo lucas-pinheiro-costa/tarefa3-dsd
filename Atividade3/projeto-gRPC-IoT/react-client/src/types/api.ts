@@ -17,6 +17,15 @@ export interface SensorListResponse {
   error?: string;
 }
 
+export interface GenerateDataResponse {
+  mensagem: string;
+  sucesso: boolean;
+  sensor_id: string;
+  temperatura: number;
+  umidade: number;
+  timestamp: string;
+}
+
 export interface SensorDataResponse {
   mensagem: string;
   sucesso: boolean;

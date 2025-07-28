@@ -2,10 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserSensors, getLatestSensorData } from '../api/api';
 import type { Sensor, SensorDataResponse, RealtimeSensorData } from '../types/api';
-import { normalizeSensorData } from '../types/api';
 import NewSensorButton from './NewSensorButton';
 
-const websocket_url = 'wss://shiny-journey-69rp9jpgvrwvf5vpx-8000.app.github.dev/ws/sensor-data/';
+const websocket_url = 'ws://localhost:8000/ws/sensor-data/';
 
 interface SensorWithData extends Sensor {
   latestData?: SensorDataResponse; 
@@ -105,13 +104,14 @@ const SensorList: React.FC = () => {
       setError('Nenhum sensor encontrado');
       setSensors([]);
     }
-  } catch (err: any) {
-    setError('Erro ao carregar sensores: ' + err.message);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+    setError('Erro ao carregar sensores: ' + errorMessage);
     console.error('Erro ao buscar sensores:', err);
   } finally {
     setLoading(false);
   }
-}, [userId]);
+}, [userId, sensors]);
 
   useEffect(() => {
     fetchSensorsAndData();
@@ -132,43 +132,55 @@ const SensorList: React.FC = () => {
         <p className="text-center text-gray-600">Nenhum sensor registrado.</p>
       )}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sensors.map((sensor) => {
-          const dataToDisplay = sensor.realtimeData || sensor.latestData;
-          const normalizedData = dataToDisplay ? normalizeSensorData(dataToDisplay) : null;
-
-          return (
-            <div
-              key={sensor.sensor_id}
-              className="bg-white p-6 rounded-lg shadow-md"
-            >
-              <h2 className="text-xl font-semibold mb-2">{sensor.nome}</h2>
-              <p className="text-gray-600 mb-4">{sensor.descricao || 'N/A'}</p>
-              {/* Exibe os dados normalizados do sensor */}
-              {normalizedData?.sucesso ? (
-                <div>
-                  <p>
-                    <strong>Temperatura:</strong>{' '}
-                    {normalizedData.temperatura.toFixed(2)} °C
-                  </p>
-                  <p>
-                    <strong>Umidade:</strong>{' '}
-                    {normalizedData.umidade.toFixed(2)}%
-                  </p>
-                  <p>
-                    <strong>Data:</strong>{' '}
-                    {normalizedData.timestamp
-                      ? new Date(normalizedData.timestamp).toLocaleString()
-                      : 'N/A'}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-red-500">
-                  {normalizedData?.mensagem || "Sem dados recentes"}
+        {sensors.map((sensor) => (
+          <div
+            key={sensor.sensor_id}
+            className="bg-white p-6 rounded-lg shadow-md"
+          >
+            <h2 className="text-xl font-semibold mb-2">{sensor.nome}</h2>
+            <p className="text-gray-600 mb-4">{sensor.descricao}</p>
+            {/* Exibe os dados do sensor - prioriza dados em tempo real */}
+            {sensor.realtimeData ? (
+              <div className="border-l-4 border-green-500 pl-4">
+                <p className="text-sm text-green-600 mb-2">📡 Dados em tempo real</p>
+                <p>
+                  <strong>Temperatura:</strong>{' '}
+                  {sensor.realtimeData.temperatura?.toFixed(2)} °C
                 </p>
-              )}
-            </div>
-          );
-        })}
+                <p>
+                  <strong>Umidade:</strong>{' '}
+                  {sensor.realtimeData.umidade?.toFixed(2)}%
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {sensor.realtimeData.timestamp
+                    ? new Date(sensor.realtimeData.timestamp).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+            ) : sensor.latestData?.sucesso ? (
+              <div className="border-l-4 border-blue-500 pl-4">
+                <p className="text-sm text-blue-600 mb-2">💾 Últimos dados salvos</p>
+                <p>
+                  <strong>Temperatura:</strong>{' '}
+                  {sensor.latestData.temperatura_encontrada?.toFixed(2)} °C
+                </p>
+                <p>
+                  <strong>Umidade:</strong>{' '}
+                  {sensor.latestData.umidade_encontrada?.toFixed(2)}%
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {sensor.latestData.timestamp_encontrado
+                    ? new Date(sensor.latestData.timestamp_encontrado).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-red-500">Sem dados disponíveis</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

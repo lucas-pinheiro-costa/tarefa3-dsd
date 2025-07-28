@@ -1,8 +1,8 @@
 import axios from 'axios';
 import type { UserResponse, SensorListResponse, SensorDataResponse, SensorRegistrationRequest,
-   SensorRegistrationResponse, UserRegistrationRequest, UserRegistrationResponse } from '../types/api';
+   SensorRegistrationResponse, UserRegistrationRequest, UserRegistrationResponse, GenerateDataResponse } from '../types/api';
 
-const API_BASE_URL = 'https://shiny-journey-69rp9jpgvrwvf5vpx-8000.app.github.dev/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 export const getUserByEmail = async (email: string): Promise<UserResponse> => {
   try {
@@ -61,7 +61,7 @@ export const registerNewSensor = async (
 
 export const getLatestSensorData = async (sensorId: string): Promise<SensorDataResponse> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sensors/${sensorId}/data/`);
+    const response = await axios.get(`${API_BASE_URL}/sensors/${sensorId}/latest-data/`);
     return response.data;
   } catch (error) {
     console.error('Erro ao buscar dados do sensor:', error); 
@@ -96,5 +96,40 @@ export const registerUser = async (userData: UserRegistrationRequest): Promise<U
   } catch (error) {
     console.error('Erro ao registrar usuário', error); 
     throw new Error('Erro ao registrar usuário');
+  }
+};
+
+export const generateSensorData = async (sensorId: number): Promise<GenerateDataResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/sensors/${sensorId}/generate-data/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `Erro na requisição: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.mensagem || errorData.error || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    return await response.json();
+  } catch (error: unknown) {
+    console.error('Erro na API ao gerar dados para sensor:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return { 
+      sucesso: false, 
+      mensagem: errorMessage,
+      sensor_id: sensorId.toString(),
+      temperatura: 0,
+      umidade: 0,
+      timestamp: new Date().toISOString()
+    };
   }
 };

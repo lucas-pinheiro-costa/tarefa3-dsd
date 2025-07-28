@@ -1,5 +1,8 @@
 package br.com.grpc.iot;
 
+import br.com.grpc.iot.soap.AuditoriaServiceImpl;
+import jakarta.xml.ws.Endpoint;
+
 // Remover imports desnecessários de model, Usuario, Sensor se eles não forem usados para testes diretos no main.
 // import br.com.grpc.iot.model.Sensor;
 // import br.com.grpc.iot.model.Usuario;
@@ -13,6 +16,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.sql.SQLException;
 // import org.h2.tools.Server;
+
 
 public class MonitorServer {
 
@@ -43,6 +47,17 @@ public class MonitorServer {
 
         // Cria uma instância do nosso serviço, passando o EntityManagerFactory
         final MonitorServiceImpl monitorService = new MonitorServiceImpl(emf);
+
+        // Inicia o serviço SOAP de auditoria
+        try {
+            String soapEndpointAddress = "http://localhost:8081/auditoria";
+            Endpoint.publish(soapEndpointAddress, new AuditoriaServiceImpl());
+            System.out.println("✅ Serviço SOAP de Auditoria iniciado em " + soapEndpointAddress + "?wsdl");
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao iniciar o serviço SOAP de Auditoria: " + e.getMessage());
+            e.printStackTrace();
+            return; // Encerra a aplicação se o serviço SOAP não puder iniciar
+        }
 
         // Cria o servidor gRPC na porta especificada, adicionando nosso serviço.
         Server server = ServerBuilder.forPort(port)

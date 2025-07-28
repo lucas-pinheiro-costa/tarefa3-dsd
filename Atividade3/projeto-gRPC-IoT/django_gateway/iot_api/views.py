@@ -4,8 +4,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.reverse import reverse
 
+from google.protobuf.json_format import MessageToJson, Parse
+from google.protobuf.timestamp_pb2 import Timestamp
+from datetime import datetime
+
 from .grpc_client import contrato_pb2
 from .grpc_client import contrato_pb2_grpc
+from .soap_client import notificar_auditoria_soap
 
 GRPC_SERVER_ADDRESS = 'localhost:50051'
 
@@ -13,6 +18,33 @@ def get_grpc_stub():
     channel = grpc.insecure_channel(GRPC_SERVER_ADDRESS)
     stub = contrato_pb2_grpc.MonitorServiceStub(channel)
     return stub, channel
+
+class GenerateSensorDataView(APIView):
+    """
+    Endpoint para gerar dados aleatórios de sensores.
+    Recebe POST: /api/sensors/<str:sensor_id>/generate-data/
+    """
+    def post(self, request, sensor_id):
+        try:
+            stub, channel = get_grpc_stub()
+            grpc_request = contrato_pb2.GenerateDataRequest(sensor_id=sensor_id)
+            grpc_response = stub.GenerateData(grpc_request)
+
+            response_data = {
+                "mensagem": grpc_response.mensagem,
+                "sucesso": grpc_response.sucesso,
+                "sensor_id": sensor_id,
+                "temperatura": grpc_response.temperatura_gerada,
+                "umidade": grpc_response.umidade_gerada,
+                "timestamp": grpc_response.timestamp_gerado.ToDatetime().isoformat() + "Z" # Formato ISO 8601 UTC
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except grpc.RpcError as e:
+            error_message = f"Erro gRPC ao gerar dados do sensor: {e.details}"
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            channel.close()
 
 class UserRegistrationView(APIView):
     """
@@ -251,3 +283,53 @@ class GetUserByEmailView(APIView):
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:
             channel.close()
+
+
+### -- Endpoint para chamada de função de auditoria --
+class RegistrarSensorView(APIView):
+    """
+    Endpoint para registrar um novo sensor.
+    Recebe POST: /api/sensors/
+    """
+    def post(self, request):
+        # 1. Extrai os dados da requisição HTTP (enviada pelo React)
+        usuario_id = request.data.get('usuarioId')
+        nome_sensor = request.data.get('nome')
+        descricao_sensor = request.data.get('descricao')
+
+        if not usuario_id or not nome_sensor:
+            return Response({"error": "usuarioId e nome são obrigatórios."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Chama o serviço gRPC para registrar o sensor no sistema principal
+        stub, channel = get_grpc_stub()
+        try:
+            grpc_request = contrato_pb2.RegistrarSensorRequest(
+                usuario_id=usuario_id,
+                nome=nome_sensor,
+                descricao=descricao_sensor
+            )
+            grpc_response = stub.RegistrarSensor(grpc_request)
+            channel.close()
+
+            if not grpc_response.sucesso:
+                return Response({"error": grpc_response.mensagem}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 3. Se o registro gRPC foi bem-sucedido, chama o serviço SOAP de auditoria
+            sensor_id_registrado = grpc_response.sensor_id
+            notificar_auditoria_soap(
+                sensor_id=sensor_id_registrado,
+                nome_sensor=nome_sensor,
+                usuario_id=usuario_id
+            )
+
+            # 4. Retorna a resposta final para o cliente React
+            response_data = {
+                "mensagem": grpc_response.mensagem,
+                "sensorId": sensor_id_registrado,
+                "sucesso": True
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except grpc.RpcError as e:
+            channel.close()
+            return Response({"error": f"Erro gRPC: {e.details()}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
